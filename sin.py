@@ -3,15 +3,15 @@ file = open('{}'.format(sys.argv[1]))
 
 #Banderas para identificar estructuras
 counter=0
-fPROG=False
-fID=False
-fSI=False
-fREP=False
-fIMP=False
-fLEE=False
-fERROR=False
 fOP_AR=False
 fOP_REL=False
+fREP=False
+fIMP=False
+fPROG=False
+fLEE=False
+fERROR=False
+fID=False
+fSI=False
 
 #Pila
 stack=[]
