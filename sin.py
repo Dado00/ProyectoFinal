@@ -6,248 +6,260 @@ from syntax import syn
 file = open('{}.lex'.format(sys.argv[1]))
 
 
-initialStack = []
-actualStack=['#']
+mainStack = []
+stack=['#']
 def isEmpty():
-  return actualStack==['#']
+  return stack==['#']
 def push(item):
-  actualStack.append(item)
+  stack.append(item)
 def pop():
-  return actualStack.pop()
+  return stack.pop()
 def inspect():
-  return actualStack[len(actualStack)-1]
+  return stack[len(stack)-1]
 def size():
-  return len(actualStack)
+  return len(stack)
+
+def checkOP_ARstructure(fPROG,fOP_AR,fREP):
+  #Controlador de op_ar
+  if (fOP_AR and '[op_ar]' in line) or (fOP_AR and '[op_ar]' in line and fREP and fPROG):
+    push('ELEM')
+    return True
 
 #Checar siguiente linea
-def checkNextLine(line):
-  next = initialStack.index(line)+1
-  if not(next >= len(initialStack)):
-    if '[id]' in initialStack[next] or 'SI' in initialStack[next] or 'REPITE' in initialStack[next] or 'IMPRIME' in initialStack[next] or 'LEE' in initialStack[next]:
+def checkNext(line):
+  next = mainStack.index(line)+1
+  if not(next >= len(mainStack)):
+    if '[id]' in mainStack[next] or 'SI' in mainStack[next] or 'REPITE' in mainStack[next] or 'IMPRIME' in mainStack[next] or 'LEE' in mainStack[next]:
       push('SENTS')
   
-flagPROG=False
-flagID=False
-flagSI=False
-flagREP=False
-flagIMP=False
-flagLEE=False
-flagError=False
-flagOP_AR=False
-flagOP_REL=False
+#-------------------------------------------------------------------
+#VARIABLES DEL PROGRAMA
 
-for line in file:
-  print(line, end = '')
-  line = line.split()
-  initialStack.append(line)
-print()
-
-cont=0
-for line in initialStack:
-  cont+= 1
-  print(line)
-  print(actualStack)
-  print()
-
-  #-------------------------------------------------------------------
+def checkPROGstructure(line,fPROG,fERROR):
   #Estructura de PROGRAMA 
-  if 'PROGRAMA' in line and not(flagPROG) and isEmpty():
-    flagPROG=True
+  if 'PROGRAMA' in line and not(fPROG) and isEmpty():
+    fPROG=True
     push('FINPROG')  
     push('SENTS')
     push('[id]')
-    continue
+    return True
   #Comprobamos que no haya error para continuar
-  if not(flagPROG) and isEmpty():
+  if not(fPROG) and isEmpty():
     print('ERROR DE INICIO DE PROGRAMA')
-    flagError=True
+    fERROR=True
     break
-  if '[id]' in line and inspect()=='[id]' and flagPROG:
-    if not(flagError):
+  if '[id]' in line and inspect()=='[id]' and fPROG:
+    if not(fERROR):
       pop()
-      continue
+      return True
     else:
       print('ERROR DE COMPILACION')
-      flagError=True
+      fERROR=True
       break
-  if 'FINPROG' in line and flagPROG and inspect()=='FINPROG':
-    flagPROG=False
+  if 'FINPROG' in line and fPROG and inspect()=='FINPROG':
+    fPROG=False
     pop()
-    continue  
-    
-  #-------------------------------------------------------------------
-  #VARIABLES DEL PROGRAMA
+    return True  
+
+def checkSENTSstructure():
   #Variable SENTS
   if inspect()=='SENTS':
     pop()
-    push('SENT')    #Metemos variable     
+    push('SENT')    #Metemos variable  
 
+def checkCOMPARAstructure(line,fOP_REL,fSI,fERROR):
   #Variable COMPARA
-  if (inspect()=='COMPARA' and flagSI) or flagOP_REL:
+  if (inspect()=='COMPARA' and fSI) or fOP_REL:
     if '[id]' in line:      
       pop()
-      flagOP_REL=True
+      fOP_REL=True
       push('[op_rel]')
-      continue
-    elif inspect()=='[op_rel]' and ('<' in line or '>' in line) and flagSI and flagOP_REL:    
-      flagOP_REL=False
+      return True
+    elif inspect()=='[op_rel]' and ('<' in line or '>' in line) and fSI and fOP_REL:    
+      fOP_REL=False
       pop()
       push('ELEM')      
     else:
       print('ERROR DE COMPILACION')
-      flagError=True
+      fERROR=True
       break
 
-  #Controlador de op_ar
-  elif (flagOP_AR and '[op_ar]' in line) or (flagOP_AR and '[op_ar]' in line and flagREP and flagPROG):
-    push('ELEM')
-    continue
-
-  #Variable ELEM
-  elif inspect()=='ELEM':
-    if '[val]' in line or '[id]' in line:
-      pop()
-      if not(flagSI):
-        checkNextLine(line)      
-      next = cont
-      if '[op_ar]' in initialStack[next] and flagPROG:   
-        flagOP_AR=True
-        continue
-      else:
-        flagID=False
-        continue
-    else:
-      print('ERROR DE COMPILACION')
-      flagError=True
-      break
-
+def checkSENTstructure(line,fSI,fREP,fIMP,fLEE,fID,fPROG,fERROR):
   #Variable SENT 
-  elif inspect()=='SENT' or flagID or flagSI or flagREP or flagIMP or flagLEE:
-    if ('=' in line and inspect()=='=' and flagID and flagPROG) or flagID and inspect()=='SENT' and not(flagIMP):
+  if inspect()=='SENT' or fID or fSI or fREP or fIMP or fLEE:
+    if ('=' in line and inspect()=='=' and fID and fPROG) or fID and inspect()=='SENT' and not(fIMP):
       pop()      
-      flagID=False
-
-    elif ('[id]' in line and inspect()=='SENT') and not(flagIMP):
-      flagID=True
+      fID=False
+    elif ('[id]' in line and inspect()=='SENT') and not(fIMP):
+      fID=True
       pop()      
       push('ELEM')
       push('=')
-      continue
-
-    elif 'SI' in line or flagSI and not(flagIMP) and not('IMPRIME' in line) and not('LEE' in line) and not('REPITE' in line):      
+      return True
+    elif 'SI' in line or fSI and not(fIMP) and not('IMPRIME' in line) and not('LEE' in line) and not('REPITE' in line):      
       #Colocamos la estructura del SI #Estructruta de SI ENTONCES SINO FINSI
-      if 'SI' in line and flagPROG and inspect()=='SENT':
+      if 'SI' in line and fPROG and inspect()=='SENT':
         pop()
-        flagSI=True
+        fSI=True
         push('FINSI')
         push('SENTS')     #Metemos variable
         push('ENTONCES')
         push('COMPARA')   #Metemos variable
-        continue
-      if inspect()=='ENTONCES' and flagSI and flagPROG:
+        return True
+      if inspect()=='ENTONCES' and fSI and fPROG:
         if 'ENTONCES' in line:          
           pop()
-          continue
+          return True
         else:
           print('ERROR DE COMPILACION')
-      if 'SINO' in line and flagSI and flagPROG:    
+      if 'SINO' in line and fSI and fPROG:    
         push('SENTS')     #Metemos variable 
-        continue
-      if flagSI and inspect()=='FINSI' and flagPROG:
+        return True
+      if fSI and inspect()=='FINSI' and fPROG:
         if 'FINSI' in line:
           pop()
-          checkNextLine(line)
-          if not('FINSI' in actualStack):
-            flagSI=False
-            continue
+          checkNext(line)
+          if not('FINSI' in stack):
+            fSI=False
+            return True
           else:
-            continue
+            return True
         else:
           print('ERROR DE COMPILACION')
-
-    elif 'REPITE' in line or flagREP and not(flagIMP) and not('IMPRIME' in line) and not('LEE' in line): 
+    elif 'REPITE' in line or fREP and not(fIMP) and not('IMPRIME' in line) and not('LEE' in line): 
       #Colocamos la estructura del REPITE #Estructura de REPITE VECES FINREP
-      if 'REPITE' in line and flagPROG and inspect()=='SENT':
+      if 'REPITE' in line and fPROG and inspect()=='SENT':
         pop()
-        flagREP=True
+        fREP=True
         push('FINREP')
         push('SENTS')     #Metemos variable
         push('VECES')  
         push('ELEM')      #Metemos variable
-        continue 
-      if inspect()=='VECES' and flagREP and flagPROG:
+        return True 
+      if inspect()=='VECES' and fREP and fPROG:
         if 'VECES' in line:          
           pop()
-          continue
+          return True
         else:
           print('ERROR DE COMPILACION')
-      if inspect()=='FINREP' and flagREP and flagPROG:
+      if inspect()=='FINREP' and fREP and fPROG:
         if 'FINREP' in line:
           pop()
-          checkNextLine(line)
-          if not('FINREP' in actualStack):
-            flagREP=False
-            continue
+          checkNext(line)
+          if not('FINREP' in stack):
+            fREP=False
+            return True
           else:
-            continue
+            return True
         else:
           print('ERROR DE COMPILACION')
           break
-
-    elif 'IMPRIME' in line or flagIMP:
+    elif 'IMPRIME' in line or fIMP:
       #Colocamos la estructura del IMPRIME #Estructura de IMPRIME
-      if 'IMPRIME' in line and flagPROG and inspect()=='SENT':
+      if 'IMPRIME' in line and fPROG and inspect()=='SENT':
         pop()
-        flagIMP=True
+        fIMP=True
         push('IMPRIME')
-        continue
-      if inspect()=='IMPRIME' and flagIMP:
+        return True
+      if inspect()=='IMPRIME' and fIMP:
         if '[text]' in line:
-          flagIMP=False
+          fIMP=False
           pop()
-          checkNextLine(line)
-          continue
+          checkNext(line)
+          return True
         elif '[id]' in line or '[val]' in line:
           pop()
           push('ELEM')    #Metemos variable 
-          flagIMP=False
+          fIMP=False
           pop()
-          checkNextLine(line)
+          checkNext(line)
         else:
           print('ERROR DE COMPILACION')
-          flagError=True
+          fERROR=True
           break
-
-    elif 'LEE' in line or flagLEE: 
+    elif 'LEE' in line or fLEE: 
       #Colocamos la estructura del LEE #Estructura de LEE
-      if 'LEE' in line and flagPROG and inspect()=='SENT':        
+      if 'LEE' in line and fPROG and inspect()=='SENT':        
         pop()   
-        flagLEE=True
+        fLEE=True
         push('LEE')
-        continue
-      if inspect()=='LEE' and flagLEE:
+        return True
+      if inspect()=='LEE' and fLEE:
         if '[id]' in line:              
           pop()
-          flagLEE=False                 
-          checkNextLine(line)
-          continue
+          fLEE=False                 
+          checkNext(line)
+          return True
         else:
           print('ERROR DE COMPILACION')
-          flagError=True
+          fERROR=True
           break
-
     else:
       print(line)
       print(inspect())
       print('ERROR DE COMPILACION')      
       break  
-
   else:
     print('ERROR DE COMPILACION')
     break  
 
-if isEmpty() and not(flagError):
+def checkELEMstructure(line,fSI,fPROG,fID,fERROR,mainStack,cont):
+  #Variable ELEM
+  if inspect()=='ELEM':
+    if '[val]' in line or '[id]' in line:
+      pop()
+      if not(fSI):
+        checkNext(line)      
+      next = cont
+      if '[op_ar]' in mainStack[next] and fPROG:   
+        fOP_AR=True
+        return True
+      else:
+        fID=False
+        return True
+    else:
+      print('ERROR DE COMPILACION')
+      fERROR=True
+      break
+
+fPROG=False
+fID=False
+fSI=False
+fREP=False
+fIMP=False
+fLEE=False
+fERROR=False
+fOP_AR=False
+fOP_REL=False
+
+for item in file:
+  print(item, end = '')
+  item = item.split()
+  mainStack.append(item)
+print()
+
+cont=0
+for item in mainStack:
+  cont+= 1
+  print(item)
+  print(stack)
+  print()
+
+  if checkPROGstructure(line,fPROG,fERROR):
+    continue
+  if checkSENTSstructure():
+    continue
+  if checkCOMPARAstructure(line,fOP_REL,fSI,fERROR):
+    continue
+  if checkOP_ARstructure(fPROG,fOP_AR,fREP):
+    continue
+  if checkELEMstructure(line,fSI,fPROG,fID,fERROR,mainStack,cont):
+    continue
+  if checkSENTstructure(line,fSI,fREP,fIMP,fLEE,fID,fPROG,fERROR): 
+    continue
+
+if isEmpty() and not(fERROR):
   print('COMPILACION EXITOSA')
 else:
-  print(actualStack)
+  print(stack)
   print('ERROR DE COMPILACION')

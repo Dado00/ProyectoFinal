@@ -1,2 +1,2 @@
 language = "python"
-run = "python lex.py" 
+run = "python lex.py test.mio" 
