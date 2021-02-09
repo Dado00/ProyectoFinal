@@ -327,7 +327,7 @@ for item in mainStack:
   print(stack)
   print()
 
-  if checkPROGstructure(line,fPROG,fERROR):
+  if checkPROGstructure(item,fPROG,fERROR):
     continue
   else:
     break

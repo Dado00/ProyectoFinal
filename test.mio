@@ -14,4 +14,4 @@ IMPRIME "Factorial de "
 IMPRIME Num
 IMPRIME " es "
 IMPRIME VarX
-FINPROG
+FINPROG 

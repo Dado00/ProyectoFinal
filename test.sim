@@ -3,10 +3,9 @@ factorial, ID01
 VarX, ID02
 VarY, ID03
 Num, ID04
-FINPRO, ID05
 
 TXT:
-"Factorial de ", TX01
+" ", TX01
 " es ", TX02
 
 VAL:
